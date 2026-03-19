@@ -2,16 +2,21 @@
 #include <cmath>
 #include <random>
 
+// Draws a sun near the top-left using a triangle fan (center + circular rim points).
 void drawSun() {
 
     float centerX = -0.7;
     float centerY = 0.7;
     float RADIUS = 0.1;
+
+    // The center vertex gets a brighter color; the rim gets a warmer orange,
+    // creating a simple radial gradient.
     glBegin(GL_TRIANGLE_FAN);
         glColor3f(1.0, 1.0, 0.0);
         glVertex2f(centerX, centerY);
 
         glColor3f(1.0, 0.6, 0.0);
+        // Sample points around a full circle to form the fan boundary.
         for (int i = 0; i <= 100; i++) {
             float angle = 2.0f * M_PI * (float)i / 100.0;
             float x = RADIUS * cosf(angle);
@@ -21,7 +26,9 @@ void drawSun() {
     glEnd();
 }
 
+// Draws the background (sky + grass) and the perspective road in the center.
 void drawRoad() {
+    // One quad stream is used for several connected rectangular/trapezoid regions.
     glBegin(GL_QUADS);
         // Drawing sky 
         glColor3f(0.7, 0.85, 1.0); // Lighter blue at the center
@@ -68,6 +75,7 @@ void drawRoad() {
         glVertex2f(0.09, 0.0);
     glEnd();
 
+    // Draw short center lane segments (dashed line) as vertical line pieces.
     glLineWidth(5.0);
     glBegin(GL_LINES);
         // Drawing road markings
@@ -80,8 +88,10 @@ void drawRoad() {
 
 }
 
+// Draws a simple rectangular building with repeating window rectangles.
 void drawBuilding(float x, float y, float width, float height, float colorVariation) {
     glBegin(GL_QUADS);
+        // Building body color is varied slightly per building for visual diversity.
         glColor3f(0.5 + colorVariation, 0.5 + colorVariation, 0.5 + colorVariation);
         glVertex2f(x, y);
         glVertex2f(x+width, y);
@@ -89,6 +99,7 @@ void drawBuilding(float x, float y, float width, float height, float colorVariat
         glVertex2f(x, y+height);
 
         // Windows
+        // Iterate upward and place one horizontal window strip per level.
         for (float windowBase = y + height / 5; windowBase < y + height - 0.1; windowBase += height / 5 + 0.1) {
             glColor3f(0.8, 0.8, 0.8);
             glVertex2f(x + width/4, windowBase);
@@ -99,6 +110,7 @@ void drawBuilding(float x, float y, float width, float height, float colorVariat
     glEnd();
 }
 
+// Composes a skyline by drawing multiple buildings at fixed positions/sizes.
 void drawCity() {
     drawBuilding(-0.5, 0.0, 0.18, 0.25, 0.1);
     drawBuilding(-0.3, 0.0, 0.1, 0.4, -0.01);
@@ -108,23 +120,31 @@ void drawCity() {
     drawBuilding(0.4, 0.0, 0.1, 0.3, -0.04);
 }
 
+// GLUT display callback: clears the frame and draws the full scene.
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
     
+    // Render order: background/road first, then foreground scene objects.
     drawRoad();
     drawSun();
     drawCity();
+
+    // Force immediate execution/flush for single-buffered rendering.
     glFlush();
 }
 
 int main(int argc, char** argv) {
+    // Initialize GLUT and parse command-line arguments.
     glutInit(&argc, argv);
 
     // Window creation
     glutInitWindowSize(1024, 768);
     glutCreateWindow("MMN11");
+
+    // Define the drawing region in pixels.
     glViewport(0, 0, 1920, 1080);
 
+    // Register the render callback and enter the event loop.
     glutDisplayFunc(display);
 
     glutMainLoop();
