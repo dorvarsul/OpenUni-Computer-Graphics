@@ -4,8 +4,14 @@
 
 bool isNight = false;
 
+float worldLeft = -1.0f;
+float worldRight = 1.0f;
+float worldBottom = -1.0f;
+float worldTop = 1.0f;
+
 // Forward declarations
 void drawCloud(float centerX, float centerY, float radius);
+void reshape(int w, int h);
 
 // Draws a sun near the top-left using a triangle fan (center + circular rim points).
 void drawSky() {
@@ -225,7 +231,7 @@ void drawCity() {
 
 void renderText(float x, float y, const char* text, int type) {
     if (type == 0) {
-        glColor3f(0.0, 0.0, 0.0); // Black for title
+        glColor3f(0.3, 0.3, 0.3); // Black for title
     } else if (type == 1) {
         glColor3f(1.0, 1.0, 1.0); // White for name of student
     } else {
@@ -269,10 +275,9 @@ void mouse(int button, int state, int x, int y) {
         float w = glutGet(GLUT_WINDOW_WIDTH);
         float h = glutGet(GLUT_WINDOW_HEIGHT);
 
-        // 2. Convert Mouse Pixels to NDC (-1.0 to 1.0)
-        // Formula: (pixel / total_size) * 2 - 1
-        float mouseX = (x / w) * 2.0f - 1.0f;
-        float mouseY = ((h - y) / h) * 2.0f - 1.0f; // Note the (h-y) to flip the axis
+        // 2. Convert mouse pixels to current world coordinates.
+        float mouseX = worldLeft + (x / w) * (worldRight - worldLeft);
+        float mouseY = worldTop - (y / h) * (worldTop - worldBottom);
 
         // 3. Define your button boundaries (from your image)
         float x1 = 0.7f;
@@ -295,6 +300,39 @@ void mouse(int button, int state, int x, int y) {
         glutPostRedisplay();
     }
 }
+
+void reshape(int w, int h) {
+    if (h == 0) {
+        h = 1;
+    }
+
+    float aspect = (float)w / (float)h;
+
+    glViewport(0, 0, w, h);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    if (aspect >= 1.0f) {
+        worldLeft = -aspect;
+        worldRight = aspect;
+        worldBottom = -1.0f;
+        worldTop = 1.0f;
+    } else {
+        worldLeft = -1.0f;
+        worldRight = 1.0f;
+        worldBottom = -1.0f / aspect;
+        worldTop = 1.0f / aspect;
+    }
+
+    glOrtho(worldLeft, worldRight, worldBottom, worldTop, -1.0, 1.0);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glutPostRedisplay();
+}
+
 
 // GLUT display callback: clears the frame and draws the full scene.
 void display() {
@@ -322,14 +360,14 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
 
     // Window creation
-    glutInitWindowSize(1024, 768);
+    glutInitWindowSize(1024, 1024);
     glutCreateWindow("MMN11");
 
-    // Define the drawing region in pixels.
-    glViewport(0, 0, 1920, 1080);
-
-    // Register the render callback and enter the event loop.
+    // Draw Main Scene
     glutDisplayFunc(display);
+
+    // Register Reshape and Mouse Callbacks
+    glutReshapeFunc(reshape);
     glutMouseFunc(mouse);
 
     glutMainLoop();
